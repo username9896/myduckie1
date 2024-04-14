@@ -56,7 +56,7 @@ def move_turtle_square():
         velocity_publisher.publish(Twist())
 
     # Stop the turtle when done
-    velocity_publisher.publish(Twist())
+    
 
     ###########################################
 
