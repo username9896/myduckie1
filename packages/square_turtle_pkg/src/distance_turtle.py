@@ -1,87 +1,8 @@
-# import rospy 
-# from geometry_msgs.msg import Twist
-# from std_msgs.msg import Float64
-# from turtlesim.msg import Pose
-# import time 
-# import math
-
-# class DistanceReader:
-#     def __init__(self):
-#         # Initialize the node
-#         rospy.init_node('turtlesim_distance_node', anonymous=True)
-
-#         # Initialize subscriber: input the topic name, message type and callback signature  
-#         rospy.Subscriber("/turtle1/pose", Pose, self.callback)
-
-#         # Initialize publisher: input the topic name, message type and msg queue size
-#         self.distance_publisher = rospy.Publisher('/turtle_dist', Float64, queue_size=10)
-
-#         # Initialize velocity publisher
-#         self.velocity_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
-
-#         # Printing to the terminal, ROS style
-#         rospy.loginfo("Initialized node!")
-        
-#         # This blocking function call keeps python from exiting until node is stopped
-#         rospy.spin()
-
-#     def callback(self, msg):
-#         # Create a Twist message to turn
-#         turn = Twist()
-#         turn.linear.y = 1.0
-
-#         move_forward = Twist()
-#         move_forward.linear.x=1.0
-
-
-#         move_backwards = Twist()
-#         move_backwards.linear.x = -1.0  # Move forward at 1 m/s
-
-#         # Get initial position
-#         initx = msg.x
-#         inity = msg.y
-
-#         rospy.loginfo("Initial Turtle Position: %s %s", initx, inity)
-
-#         # Move forward for 1 second
-#         self.velocity_publisher.publish(move_forward)
-#         time.sleep(1)
-
-#         # Stop moving
-#         self.velocity_publisher.publish(Twist())
-
-#         # Turn for 1 second
-#         self.velocity_publisher.publish(turn)
-#         time.sleep(1)
-#         self.velocity_publisher.publish(Twist())
-
-#         # Move backwards for 1 second
-#         self.velocity_publisher.publish(move_backwards)
-#         time.sleep(1)
-#         self.velocity_publisher.publish(Twist())
-
-#         # Calculate the distance the turtle has travelled and publish it
-#         finx = msg.x
-#         finy = msg.y
-
-#         diffx = (finx - initx)**2
-#         diffy = (finy - inity)**2
-
-#         distance = math.sqrt(diffx + diffy)
-
-#         rospy.loginfo("Total distance: %s", distance)
-
-# if __name__ == '__main__': 
-#     try: 
-#         distance_reader_class_instance = DistanceReader()
-#     except rospy.ROSInterruptException: 
-#         pass
-
+# Import Dependencies
 import rospy 
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 from turtlesim.msg import Pose
-import time 
 import math
 
 class DistanceReader:
@@ -95,59 +16,39 @@ class DistanceReader:
         # Initialize publisher: input the topic name, message type and msg queue size
         self.distance_publisher = rospy.Publisher('/turtle_dist', Float64, queue_size=10)
 
-        # Initialize velocity publisher
-        self.velocity_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
+        # Initialize variables to store the previous position
+        self.prev_x = None
+        self.prev_y = None
+
+        # Initialize total distance traveled
+        self.total_distance = 0.0
 
         # Printing to the terminal, ROS style
         rospy.loginfo("Initialized node!")
-        
+
         # This blocking function call keeps python from exiting until node is stopped
         rospy.spin()
 
+    # Whenever a message is received from the specified subscriber, this function will be called
     def callback(self, msg):
-        # Create a Twist message to turn
-        turn = Twist()
-        turn.linear.y = 1.0
 
-        move_forward = Twist()
-        move_forward.linear.x = 1.0
+        if self.prev_x is not None and self.prev_y is not None:
+            # Calculate the distance between current and previous positions
+            diff_x = msg.x - self.prev_x
+            diff_y = msg.y - self.prev_y
+            distance = math.sqrt(diff_x ** 2 + diff_y ** 2)
 
-        move_backwards = Twist()
-        move_backwards.linear.x = -1.0  # Move backward at 1 m/s
+            # Update total distance traveled
+            self.total_distance += distance
 
-        # Get initial position
-        initx = msg.position.x
-        inity = msg.position.y
+            # Publish the total distance
+            self.distance_publisher.publish(self.total_distance)
 
-        rospy.loginfo("Initial Turtle Position: %s %s", initx, inity)
+            rospy.loginfo("Total distance: %s", self.total_distance)
 
-        # Move forward for 1 second
-        self.velocity_publisher.publish(move_forward)
-        time.sleep(1)
-
-        # Stop moving
-        self.velocity_publisher.publish(Twist())
-
-        # Turn for 1 second
-        self.velocity_publisher.publish(turn)
-        time.sleep(1)
-        self.velocity_publisher.publish(Twist())
-
-        # Move backwards for 1 second
-        self.velocity_publisher.publish(move_backwards)
-        time.sleep(1)
-        self.velocity_publisher.publish(Twist())
-
-        # Calculate the distance the turtle has traveled and publish it
-        finx = msg.position.x
-        finy = msg.position.y
-
-        diffx = (finx - initx) ** 2
-        diffy = (finy - inity) ** 2
-
-        distance = math.sqrt(diffx + diffy)
-
-        rospy.loginfo("Total distance: %s", distance)
+        # Update previous position
+        self.prev_x = msg.x
+        self.prev_y = msg.y
 
 if __name__ == '__main__': 
     try: 
