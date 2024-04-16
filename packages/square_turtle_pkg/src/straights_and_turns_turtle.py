@@ -49,6 +49,7 @@ class TurtlesimStraightsAndTurns:
 
     def goal_angle_callback(self,msg):
         self.goal_angle = msg.data
+      
         if self.goal_angle == 0:
             self.angle_goal_active = False
         else:
@@ -56,48 +57,26 @@ class TurtlesimStraightsAndTurns:
 
     def goal_distance_callback(self,msg):
         self.goal_distance = msg.data
+      
         if self.goal_distance == 0:
             self.dist_goal_active = False
         else:
             self.dist_goal_active = True
-            if self.goal_distance < 0:
-                self.forward_movement = False
-            else:
-                self.forward_movement = True
+            
 
     def timer_callback(self,msg):
         if self.dist_goal_active:
-            if self.forward_movement:
-                if abs(self.last_distance) >= abs(self.goal_distance):
-                    self.dist_goal_active = False
-                    twist_msg = Twist()
-                    self.velocity_publisher.publish(twist_msg)
-                else:
-                    twist_msg = Twist()
-                    twist_msg.linear.x = 0.5
-                    self.velocity_publisher.publish(twist_msg)
-            else:
-                if abs(self.last_distance) >= abs(self.goal_distance):
-                    self.dist_goal_active = False
-                    twist_msg = Twist()
-                    self.velocity_publisher.publish(twist_msg)
-                else:
-                    twist_msg = Twist()
-                    twist_msg.linear.x = -0.5
-                    self.velocity_publisher.publish(twist_msg)
-        
+            twist_msg = Twist()
+            twist_msg.linear.x = self.goal_distance
+            self.velocity_publisher.publish(twist_msg)
+            self.dist_goal_active = False
+            
         if self.angle_goal_active:
-            if abs(self.last_angle - self.goal_angle) < 0.1:
-                self.angle_goal_active = False
-                twist_msg = Twist()
-                self.velocity_publisher.publish(twist_msg)
-            else:
-                twist_msg = Twist()
-                if self.goal_angle > 0:
-                    twist_msg.angular.z = 1.0
-                else:
-                    twist_msg.angular.z = -1.0
-                self.velocity_publisher.publish(twist_msg)
+            twist_msg = Twist()
+            twist_msg.angular.z = self.goal_angle
+            self.velocity_publisher.publish(twist_msg)
+            self.angle_goal_active = False
+            
 
 if __name__ == '__main__': 
 
